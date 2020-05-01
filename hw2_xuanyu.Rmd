@@ -18,20 +18,31 @@ library(ggplot2)
 time <- video$time
 ggplot(video, aes(time))+geom_histogram()
 ```
+
+
 ```{r}
-a <- sd(time)/sqrt(91)
+sqsum = 0
+for (i in time) {
+  sqsum <- sqsum + (i-mean(time))^2
+}
+sqS = sqsum/(length(time)-1)
+varEst = sqrt(sqS*(313/314))
+a <- varEst/sqrt(91)
 ciL <- mean(time) - 2*a
 ciR <- mean(time) + 2*a
-qplot(time, geom='histogram') + geom_vline(aes(xintercept=ciL)) + geom_vline(aes(xintercept=ciR))
+qplot(time, geom='histogram') + geom_vline(aes(xintercept=ciL), color = 'red') + geom_vline(aes(xintercept=ciR), color = 'red')
 
 ciL
 ciR
 ```
+
+
+
 ```{r}
 bootobj = NULL
 n <- 400
 for ( i in 1:n) {
-  bootobj[i] = mean (sample(as.vector(time), size = 91, replace = TRUE))
+  bootobj[i] = mean (sample(as.vector(rep(time, times=4)), size = 91, replace = TRUE))
 }
 quantile(bootobj, c(.025, .975))
 qplot(bootobj, geom='histogram') 
@@ -63,11 +74,14 @@ skew = NULL
 for (i in 1:1000){
   skew[i] = skewness(rnorm(n))
 }
-```
 
-```{r}
-qplot(kurt, geom = 'histogram') + geom_vline(aes(xintercept=bootKurt))
-qplot(skew, geom = 'histogram') + geom_vline(aes(xintercept=bootSkew))
+qplot(kurt, geom = 'histogram') + geom_vline(aes(xintercept=bootKurt), color = 'red')
+qplot(skew, geom = 'histogram') + geom_vline(aes(xintercept=bootSkew), color = 'red')
+
+p_kurt <- mean(kurt > bootKurt)
+p_skew <- mean(skew > bootSkew)
+p_kurt
+p_skew
 ```
 
 
@@ -84,7 +98,7 @@ copy <- data.frame(videoMulti)
 copy$like <- video$like
 copy$other <- NULL
 copy$other2 <- NULL
-copy <- copy[complete.cases(copy),]
+copy <- copy[complete.cases(copy),6:20]
 copy
 ```
 
@@ -98,20 +112,32 @@ noResp <- copy[copy$like==99,]
 ```
 
 ```{r}
-df <- data.frame(t(data.frame(colMeans(very), colMeans(somewhat), colMeans(notReally), colMeans(no))))
+dislike <- rbind(no, never)
+df <- data.frame(t(data.frame(colMeans(very), colMeans(somewhat), colMeans(notReally), colMeans(dislike))))
 df$like <- NULL
+rLike <- df[,1:5]
+rDislike <- df[,5:14]
 ```
 
 ```{r}
-barplot(as.matrix(df),
-main = "Percentage of people agreed with each reason",
-xlab = "Attitude",
-col = c("red","green", "blue", "yellow"),
-beside = TRUE
+resp <- colnames(df)
+
+barplot(as.matrix(rLike), las=2,
+main = "Percentage of people agreed with each reason of liking video games",
+col = c("red","green", "blue"),
 )
 legend(x = "topright", bty = "n", cex=0.5,
-c("Very Much","Somewhat","Not Really", "Not At All"),
+c("Very Much","Somewhat","Not Really"),
 fill = c("red","green","blue")
 )
+barplot(as.matrix(rDislike), las=2,
+main = "Percentage of people agreed with each reason of disliking video games",
+col = c("red","green", "blue", "yellow"),
+)
+legend(x = "topleft", bty = "n", cex=0.5,
+c("Very Much","Somewhat","Not Really", "Not At All or never played"),
+fill = c("red","green","blue", "yellow")
+)
 ```
+
 
