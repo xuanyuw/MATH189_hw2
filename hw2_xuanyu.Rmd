@@ -1,0 +1,117 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+setwd('Documents/Github/math189/hw2/')
+```
+```{r}
+video <- read.table('videodata.txt', header = TRUE)
+videoMulti <- read.table('videoMultiple.txt', header = TRUE)
+head(video)
+head(videoMulti)
+```
+```{r}
+library(ggplot2)
+time <- video$time
+ggplot(video, aes(time))+geom_histogram()
+```
+```{r}
+a <- sd(time)/sqrt(91)
+ciL <- mean(time) - 2*a
+ciR <- mean(time) + 2*a
+qplot(time, geom='histogram') + geom_vline(aes(xintercept=ciL)) + geom_vline(aes(xintercept=ciR))
+
+ciL
+ciR
+```
+```{r}
+bootobj = NULL
+n <- 400
+for ( i in 1:n) {
+  bootobj[i] = mean (sample(as.vector(time), size = 91, replace = TRUE))
+}
+quantile(bootobj, c(.025, .975))
+qplot(bootobj, geom='histogram') 
+
+```
+
+
+```{r}
+library(moments)
+bootSkew <- skewness(bootobj)
+bootKurt <- kurtosis(bootobj)
+bootSkew
+bootKurt
+```
+
+
+```{r}
+par(pty = 's') # plot in a square
+qqnorm(bootobj)
+qqline(bootobj)
+```
+
+```{r}
+kurt = NULL
+for (i in 1:1000){
+  kurt[i] = kurtosis(rnorm(n))
+}
+skew = NULL
+for (i in 1:1000){
+  skew[i] = skewness(rnorm(n))
+}
+```
+
+```{r}
+qplot(kurt, geom = 'histogram') + geom_vline(aes(xintercept=bootKurt))
+qplot(skew, geom = 'histogram') + geom_vline(aes(xintercept=bootSkew))
+```
+
+
+```{r}
+att=video$like
+resp_att <- att[!att == 99]
+qplot(resp_att, geom = 'histogram')
+mean(resp_att)
+
+```
+
+```{r}
+copy <- data.frame(videoMulti)
+copy$like <- video$like
+copy$other <- NULL
+copy$other2 <- NULL
+copy <- copy[complete.cases(copy),]
+copy
+```
+
+```{r}
+never <- copy[copy$like==1,]
+very <- copy[copy$like==2,]
+somewhat <- copy[copy$like==3,]
+notReally <- copy[copy$like==4,]
+no <- copy[copy$like==5,]
+noResp <- copy[copy$like==99,]
+```
+
+```{r}
+df <- data.frame(t(data.frame(colMeans(very), colMeans(somewhat), colMeans(notReally), colMeans(no))))
+df$like <- NULL
+```
+
+```{r}
+barplot(as.matrix(df),
+main = "Percentage of people agreed with each reason",
+xlab = "Attitude",
+col = c("red","green", "blue", "yellow"),
+beside = TRUE
+)
+legend(x = "topright", bty = "n", cex=0.5,
+c("Very Much","Somewhat","Not Really", "Not At All"),
+fill = c("red","green","blue")
+)
+```
+
